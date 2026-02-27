@@ -42,14 +42,18 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
+    console.log("Fetching portfolio data...");
     try {
       const res = await fetch('/api/portfolio');
+      console.log("Fetch response status:", res.status);
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
       const text = await res.text();
+      console.log("Fetch response text length:", text.length);
       try {
         const json = JSON.parse(text);
+        console.log("Portfolio data loaded successfully");
         setData(json);
       } catch (e) {
         console.error("Failed to parse portfolio JSON", e);

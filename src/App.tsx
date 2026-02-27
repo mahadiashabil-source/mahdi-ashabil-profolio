@@ -15,6 +15,7 @@ const AppRoutes = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    console.log("AppRoutes mounted, current path:", location.pathname);
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), 600);
     return () => clearTimeout(timer);

@@ -4,6 +4,7 @@ import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config();
 
@@ -11,17 +12,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let db: any;
-try {
-  db = new Database("portfolio.db");
-  // Initialize database
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS portfolio (
-      id INTEGER PRIMARY KEY,
-      data TEXT NOT NULL
-    )
-  `);
-} catch (err) {
-  console.error("Database initialization failed", err);
+function initDb() {
+  try {
+    const dbPath = path.join(__dirname, "portfolio.db");
+    console.log(`Initializing database at: ${dbPath}`);
+    db = new Database(dbPath);
+    // Initialize database
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS portfolio (
+        id INTEGER PRIMARY KEY,
+        data TEXT NOT NULL
+      )
+    `);
+    
+    // Seed data if empty
+    const row = db.prepare("SELECT count(*) as count FROM portfolio").get() as { count: number };
+    if (row.count === 0) {
+      console.log("Seeding initial data...");
+      db.prepare("INSERT INTO portfolio (id, data) VALUES (1, ?)").run(JSON.stringify(initialData));
+    }
+  } catch (err) {
+    console.error("Database initialization failed:", err);
+    db = null;
+  }
 }
 
 const initialData = {
@@ -114,36 +127,46 @@ const initialData = {
 };
 
 // Seed data if empty
-if (db) {
-  try {
-    const row = db.prepare("SELECT count(*) as count FROM portfolio").get() as { count: number };
-    if (row.count === 0) {
-      db.prepare("INSERT INTO portfolio (id, data) VALUES (1, ?)").run(JSON.stringify(initialData));
-    }
-  } catch (err) {
-    console.error("Seeding failed", err);
-  }
-}
+// Moved inside initDb
 
 async function startServer() {
+  initDb();
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
 
+  // Request logging
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+  });
+
+  // Health Check
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      env: process.env.NODE_ENV,
+      cwd: process.cwd(),
+      dirname: __dirname
+    });
+  });
+
   // API Routes
   app.get("/api/portfolio", (req, res) => {
     try {
       if (!db) {
+        console.log("Database not initialized, returning initialData");
         return res.json(initialData);
       }
       const row = db.prepare("SELECT data FROM portfolio WHERE id = 1").get() as { data: string } | undefined;
       if (!row) {
+        console.log("No data found in database, returning initialData");
         return res.json(initialData);
       }
       res.json(JSON.parse(row.data));
     } catch (err) {
-      console.error("API Error:", err);
+      console.error("API Error (/api/portfolio):", err);
       res.json(initialData);
     }
   });
@@ -168,15 +191,35 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
+    console.log("Starting in DEVELOPMENT mode with Vite middleware");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, "dist")));
+    const distPath = path.resolve(process.cwd(), "dist");
+    console.log(`Starting in PRODUCTION mode. Serving from: ${distPath}`);
+    
+    if (!fs.existsSync(distPath)) {
+      console.error(`ERROR: dist folder NOT found at ${distPath}`);
+    } else {
+      console.log(`SUCCESS: dist folder found at ${distPath}`);
+      if (fs.existsSync(path.join(distPath, "index.html"))) {
+        console.log("SUCCESS: index.html found in dist");
+      } else {
+        console.error("ERROR: index.html NOT found in dist");
+      }
+    }
+
+    app.use(express.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(__dirname, "dist", "index.html"));
+      const indexPath = path.join(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send("Application not built. Please run 'npm run build' first.");
+      }
     });
   }
 
