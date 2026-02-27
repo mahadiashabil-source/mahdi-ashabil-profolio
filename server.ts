@@ -14,6 +14,8 @@ const __dirname = path.dirname(__filename);
 // Supabase Client Initialization
 const supabaseUrl = process.env.SUPABASE_URL || "https://mdlmmnzizoswsywssxkg.supabase.co";
 const supabaseKey = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kbG1tbnppem9zd3N5d3NzeGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzIzMzAsImV4cCI6MjA4NzcwODMzMH0.o-tEpFWtg1I2HE60Z95492PzlcJ1Cdd0ZCmBsReWN5w";
+
+console.log("Initializing Supabase with URL:", supabaseUrl);
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const initialData = {
@@ -113,7 +115,10 @@ async function startServer() {
 
   // Request logging
   app.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`);
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
     next();
   });
 
@@ -199,21 +204,19 @@ async function startServer() {
     const distPath = path.resolve(process.cwd(), "dist");
     console.log(`Starting in PRODUCTION mode. Serving from: ${distPath}`);
     
-    if (!fs.existsSync(distPath)) {
-      console.error(`ERROR: dist folder NOT found at ${distPath}`);
-    } else {
-      console.log(`SUCCESS: dist folder found at ${distPath}`);
-      if (fs.existsSync(path.join(distPath, "index.html"))) {
-        console.log("SUCCESS: index.html found in dist");
-      } else {
-        console.error("ERROR: index.html NOT found in dist");
+    // Serve static files with no-cache headers for index.html
+    app.use(express.static(distPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        }
       }
-    }
+    }));
 
-    app.use(express.static(distPath));
     app.get("*", (req, res) => {
       const indexPath = path.join(distPath, "index.html");
       if (fs.existsSync(indexPath)) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         res.sendFile(indexPath);
       } else {
         res.status(404).send("Application not built. Please run 'npm run build' first.");

@@ -309,9 +309,39 @@ const Footer = ({ socials }: { socials: any[] }) => {
 };
 
 export default function Home() {
-  const { data, loading } = usePortfolio();
+  const { data, loading, refresh } = usePortfolio();
 
-  if (loading || !data) return <div className="min-h-screen bg-black flex items-center justify-center text-cyan-400 font-mono">INITIALIZING_SYSTEM...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-cyan-400 font-mono gap-6">
+        <div className="relative">
+          <div className="w-20 h-20 border-4 border-cyan-900 rounded-full"></div>
+          <div className="absolute top-0 left-0 w-20 h-20 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <div className="text-xl tracking-[0.2em] animate-pulse font-bold">LOADING_PORTFOLIO_V2</div>
+          <div className="text-[10px] text-cyan-800 uppercase tracking-widest">Establishing secure connection...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-red-400 font-mono p-4 text-center gap-6">
+        <div className="text-2xl font-bold">SYSTEM_FAILURE: DATA_NOT_FOUND</div>
+        <p className="text-gray-400 max-w-md">
+          Could not connect to the portfolio database. Please check your Supabase connection and RLS policies.
+        </p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-6 py-2 bg-white/10 border border-white/20 rounded-xl text-white hover:bg-white/20 transition-all"
+        >
+          RETRY_CONNECTION
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-grid">

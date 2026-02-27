@@ -43,23 +43,28 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const fetchData = async () => {
     console.log("Fetching portfolio data...");
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
     try {
-      const res = await fetch('/api/portfolio');
+      const res = await fetch('/api/portfolio', { signal: controller.signal });
+      clearTimeout(timeoutId);
       console.log("Fetch response status:", res.status);
+      
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      const text = await res.text();
-      console.log("Fetch response text length:", text.length);
-      try {
-        const json = JSON.parse(text);
-        console.log("Portfolio data loaded successfully");
-        setData(json);
-      } catch (e) {
-        console.error("Failed to parse portfolio JSON", e);
+      
+      const json = await res.json();
+      console.log("Portfolio data loaded successfully");
+      setData(json);
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        console.error("Fetch portfolio data timed out after 8s");
+      } else {
+        console.error("Failed to fetch portfolio data", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch portfolio data", err);
     } finally {
       setLoading(false);
     }
