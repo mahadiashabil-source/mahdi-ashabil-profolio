@@ -134,7 +134,13 @@ async function startServer() {
 
   // API Routes
   app.get("/api/portfolio", async (req, res) => {
+    console.log(`${new Date().toISOString()} - GET /api/portfolio request received`);
     try {
+      if (!supabase) {
+        console.error("Supabase client not initialized!");
+        return res.json(initialData);
+      }
+
       const { data, error } = await supabase
         .from('portfolio')
         .select('data')
@@ -142,25 +148,29 @@ async function startServer() {
         .maybeSingle();
 
       if (error) {
-        console.error("Supabase fetch error:", error.message);
+        console.error("Supabase fetch error details:", JSON.stringify(error));
         return res.json(initialData);
       }
 
       if (!data) {
-        console.log("No data found in Supabase, seeding initialData...");
+        console.log("No data found in Supabase table 'portfolio' for id=1. Attempting to seed...");
         const { error: insertError } = await supabase
           .from('portfolio')
           .insert({ id: 1, data: initialData });
         
         if (insertError) {
-          console.error("Failed to seed Supabase:", insertError.message);
+          console.error("Failed to seed Supabase table:", insertError.message);
+          console.error("Full insert error details:", JSON.stringify(insertError));
+        } else {
+          console.log("Successfully seeded initialData to Supabase.");
         }
         return res.json(initialData);
       }
 
+      console.log("Successfully fetched portfolio data from Supabase.");
       res.json(data.data);
-    } catch (err) {
-      console.error("API Error (/api/portfolio):", err);
+    } catch (err: any) {
+      console.error("API Critical Error (/api/portfolio):", err.message);
       res.json(initialData);
     }
   });
