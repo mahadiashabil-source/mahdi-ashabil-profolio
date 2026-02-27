@@ -1,41 +1,20 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import fs from "fs";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let db: any;
-function initDb() {
-  try {
-    const dbPath = path.join(__dirname, "portfolio.db");
-    console.log(`Initializing database at: ${dbPath}`);
-    db = new Database(dbPath);
-    // Initialize database
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS portfolio (
-        id INTEGER PRIMARY KEY,
-        data TEXT NOT NULL
-      )
-    `);
-    
-    // Seed data if empty
-    const row = db.prepare("SELECT count(*) as count FROM portfolio").get() as { count: number };
-    if (row.count === 0) {
-      console.log("Seeding initial data...");
-      db.prepare("INSERT INTO portfolio (id, data) VALUES (1, ?)").run(JSON.stringify(initialData));
-    }
-  } catch (err) {
-    console.error("Database initialization failed:", err);
-    db = null;
-  }
-}
+// Supabase Client Initialization
+const supabaseUrl = process.env.SUPABASE_URL || "https://mdlmmnzizoswsywssxkg.supabase.co";
+const supabaseKey = process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kbG1tbnppem9zd3N5d3NzeGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMzIzMzAsImV4cCI6MjA4NzcwODMzMH0.o-tEpFWtg1I2HE60Z95492PzlcJ1Cdd0ZCmBsReWN5w";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const initialData = {
   hero: {
@@ -126,11 +105,7 @@ const initialData = {
   ]
 };
 
-// Seed data if empty
-// Moved inside initDb
-
 async function startServer() {
-  initDb();
   const app = express();
   const PORT = 3000;
 
@@ -153,30 +128,53 @@ async function startServer() {
   });
 
   // API Routes
-  app.get("/api/portfolio", (req, res) => {
+  app.get("/api/portfolio", async (req, res) => {
     try {
-      if (!db) {
-        console.log("Database not initialized, returning initialData");
+      const { data, error } = await supabase
+        .from('portfolio')
+        .select('data')
+        .eq('id', 1)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Supabase fetch error:", error.message);
         return res.json(initialData);
       }
-      const row = db.prepare("SELECT data FROM portfolio WHERE id = 1").get() as { data: string } | undefined;
-      if (!row) {
-        console.log("No data found in database, returning initialData");
+
+      if (!data) {
+        console.log("No data found in Supabase, seeding initialData...");
+        const { error: insertError } = await supabase
+          .from('portfolio')
+          .insert({ id: 1, data: initialData });
+        
+        if (insertError) {
+          console.error("Failed to seed Supabase:", insertError.message);
+        }
         return res.json(initialData);
       }
-      res.json(JSON.parse(row.data));
+
+      res.json(data.data);
     } catch (err) {
       console.error("API Error (/api/portfolio):", err);
       res.json(initialData);
     }
   });
 
-  app.post("/api/portfolio", (req, res) => {
+  app.post("/api/portfolio", async (req, res) => {
     const { password, data } = req.body;
     if (password !== process.env.ADMIN_PASSWORD) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-    db.prepare("UPDATE portfolio SET data = ? WHERE id = 1").run(JSON.stringify(data));
+    
+    const { error } = await supabase
+      .from('portfolio')
+      .upsert({ id: 1, data: data });
+
+    if (error) {
+      console.error("Supabase update error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+    
     res.json({ success: true });
   });
 
