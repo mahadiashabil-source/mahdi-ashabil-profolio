@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Link, useParams, Navigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
 import { usePortfolio } from '../context/PortfolioContext';
 import { getIcon } from '../utils/icons';
 
 export default function VenturePage() {
   const { slug } = useParams();
   const { data, loading } = usePortfolio();
+  const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-cyan-400 font-mono">LOADING_VENTURE...</div>;
   if (!data) return <Navigate to="/" />;
@@ -25,7 +26,7 @@ export default function VenturePage() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-6 sm:p-8 md:p-12 neon-border"
+          className="glass-card p-6 sm:p-8 md:p-12 neon-border mb-12"
         >
           <div className="flex flex-col md:flex-row gap-6 sm:gap-8 items-center md:items-start">
             <img 
@@ -58,7 +59,63 @@ export default function VenturePage() {
             </div>
           </div>
         </motion.div>
+
+        {/* Venture Gallery */}
+        {venture.details.gallery && venture.details.gallery.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="space-y-8"
+          >
+            <h2 className="text-2xl font-bold text-center">Project <span className="gradient-text">Gallery</span></h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {venture.details.gallery.map((img, i) => (
+                <motion.div
+                  key={i}
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => setSelectedImg(img)}
+                  className="relative aspect-video rounded-2xl overflow-hidden cursor-pointer border border-white/10 group"
+                >
+                  <img 
+                    src={img} 
+                    alt={`${venture.title} gallery ${i}`} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-white/70" />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
+
+      {/* Image Modal */}
+      {selectedImg && (
+        <div 
+          className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
+          onClick={() => setSelectedImg(null)}
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative max-w-5xl w-full"
+          >
+            <button className="absolute -top-12 right-0 text-white/50 hover:text-white transition-colors">
+              <X className="w-8 h-8" />
+            </button>
+            <img 
+              src={selectedImg} 
+              alt="Gallery Preview" 
+              className="w-full h-auto rounded-3xl shadow-2xl border border-white/10"
+              referrerPolicy="no-referrer"
+            />
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

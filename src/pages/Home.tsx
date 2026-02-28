@@ -8,7 +8,11 @@ import {
   Facebook,
   Instagram,
   Linkedin,
-  Twitter
+  Twitter,
+  Phone,
+  PhoneCall,
+  Image as ImageIcon,
+  X
 } from 'lucide-react';
 
 const ParticleBackground = () => {
@@ -55,7 +59,113 @@ const ParticleBackground = () => {
   );
 };
 
-const Hero = ({ data }: { data: any }) => {
+const CallButtons = ({ contact }: { contact: any }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!contact) return null;
+
+  return (
+    <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end gap-4">
+      {isOpen && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="flex flex-col gap-3 mb-2"
+        >
+          <a 
+            href={`tel:${contact.phone}`}
+            className="flex items-center gap-3 px-4 py-3 bg-cyan-500 text-black rounded-2xl font-bold shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:bg-cyan-400 transition-all"
+          >
+            <Phone className="w-5 h-5" /> {contact.phone}
+          </a>
+          <a 
+            href={`tel:${contact.telephone}`}
+            className="flex items-center gap-3 px-4 py-3 bg-violet-500 text-white rounded-2xl font-bold shadow-[0_0_20px_rgba(139,92,246,0.5)] hover:bg-violet-400 transition-all"
+          >
+            <PhoneCall className="w-5 h-5" /> {contact.telephone}
+          </a>
+        </motion.div>
+      )}
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${isOpen ? 'bg-red-500 rotate-90' : 'bg-white text-black hover:scale-110'}`}
+      >
+        {isOpen ? <X className="w-8 h-8" /> : <Phone className="w-8 h-8 animate-pulse" />}
+      </button>
+    </div>
+  );
+};
+
+const Gallery = ({ data }: { data: any[] }) => {
+  const [selectedImg, setSelectedImg] = useState<any>(null);
+
+  if (!data || data.length === 0) return null;
+
+  return (
+    <section className="py-16 sm:py-24 px-4 md:px-8 max-w-7xl mx-auto">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="text-center mb-12"
+      >
+        <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">Visual <span className="gradient-text">Gallery</span></h2>
+        <p className="text-gray-400">Capturing moments from my various ventures and projects.</p>
+      </motion.div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {data.map((item, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.1 }}
+            whileHover={{ scale: 1.05, zIndex: 10 }}
+            onClick={() => setSelectedImg(item)}
+            className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer border border-white/10 group"
+          >
+            <img 
+              src={item.url} 
+              alt={item.caption} 
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+              <p className="text-white text-xs font-medium">{item.caption}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {selectedImg && (
+        <div 
+          className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4"
+          onClick={() => setSelectedImg(null)}
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative max-w-5xl w-full"
+          >
+            <button className="absolute -top-12 right-0 text-white/50 hover:text-white transition-colors">
+              <X className="w-8 h-8" />
+            </button>
+            <img 
+              src={selectedImg.url} 
+              alt={selectedImg.caption} 
+              className="w-full h-auto rounded-3xl shadow-2xl border border-white/10"
+              referrerPolicy="no-referrer"
+            />
+            <p className="text-white text-center mt-6 text-xl font-display">{selectedImg.caption}</p>
+          </motion.div>
+        </div>
+      )}
+    </section>
+  );
+};
+
+const Hero = ({ data, branding }: { data: any, branding: any }) => {
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 1000], [0, 300]);
   const opacity = useTransform(scrollY, [0, 500], [1, 0]);
@@ -63,6 +173,19 @@ const Hero = ({ data }: { data: any }) => {
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
       <ParticleBackground />
+      
+      {/* Header Logo */}
+      {branding?.logo && (
+        <motion.div 
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="absolute top-8 left-8 z-50 flex items-center gap-3"
+        >
+          <img src={branding.logo} alt="Logo" className="w-10 h-10 rounded-xl border border-white/20 shadow-lg" referrerPolicy="no-referrer" />
+          <span className="text-white font-display font-bold tracking-tighter text-xl">MA.</span>
+        </motion.div>
+      )}
+
       <motion.div style={{ y, opacity }} className="relative z-10 text-center px-4">
         <div className="relative inline-block mb-8">
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 via-violet-500 to-fuchsia-500 blur-xl opacity-50 animate-rotate-glow"></div>
@@ -309,7 +432,21 @@ const Footer = ({ socials }: { socials: any[] }) => {
 };
 
 export default function Home() {
-  const { data, loading, refresh } = usePortfolio();
+  const { data, loading } = usePortfolio();
+
+  useEffect(() => {
+    if (data?.branding?.favicon) {
+      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (link) {
+        link.href = data.branding.favicon;
+      } else {
+        const newLink = document.createElement('link');
+        newLink.rel = 'icon';
+        newLink.href = data.branding.favicon;
+        document.head.appendChild(newLink);
+      }
+    }
+  }, [data]);
 
   if (loading) {
     return (
@@ -345,13 +482,15 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-grid">
-      <Hero data={data.hero} />
+      <Hero data={data.hero} branding={data.branding} />
       <About data={data.about} />
       <Skills data={data.skills} />
       <Ventures data={data.ventures} />
+      <Gallery data={data.gallery} />
       <Achievements data={data.achievements} />
       <Socials data={data.socials} />
       <Footer socials={data.socials} />
+      <CallButtons contact={data.contact} />
     </div>
   );
 }

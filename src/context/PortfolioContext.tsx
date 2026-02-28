@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface PortfolioData {
+  branding: {
+    logo: string;
+    favicon: string;
+  };
+  contact: {
+    phone: string;
+    telephone: string;
+  };
   hero: {
     name: string;
     title: string;
@@ -22,9 +30,11 @@ interface PortfolioData {
     details: {
       subtitle: string;
       description: string;
+      gallery: string[];
       links: Array<{ name: string; url: string; type: string }>;
     };
   }>;
+  gallery: Array<{ url: string; caption: string }>;
   achievements: Array<{ title: string; year: string; icon: string; color: string }>;
   socials: Array<{ name: string; url: string; type: string }>;
 }
@@ -38,6 +48,14 @@ interface PortfolioContextType {
 const PortfolioContext = createContext<PortfolioContextType | undefined>(undefined);
 
 const initialData: PortfolioData = {
+  branding: {
+    logo: "https://picsum.photos/seed/logo/200/200",
+    favicon: "https://picsum.photos/seed/favicon/32/32"
+  },
+  contact: {
+    phone: "+8801307502546",
+    telephone: "+8809638036520"
+  },
   hero: {
     name: "Mahdi Ashabil",
     title: "IT Manager • Entrepreneur • Simple Person",
@@ -70,6 +88,11 @@ const initialData: PortfolioData = {
       details: {
         subtitle: "Customized Gift Products",
         description: "Wrapify is a business dedicated to creating and selling customized gift products. We focus on delivering personalized gifts to make people smile, ensuring quality, efficiency, and care in every package.",
+        gallery: [
+          "https://picsum.photos/seed/wrapify1/800/600",
+          "https://picsum.photos/seed/wrapify2/800/600",
+          "https://picsum.photos/seed/wrapify3/800/600"
+        ],
         links: [
           { name: "Website", url: "https://www.wrapifybd.online", type: "Globe" },
           { name: "Facebook", url: "https://www.facebook.com/profile.php?id=61582984047027", type: "Facebook" },
@@ -88,6 +111,10 @@ const initialData: PortfolioData = {
       details: {
         subtitle: "Educational Institution",
         description: "Syntax Academy is a premier educational institution where I serve as Manager. We are dedicated to providing top-tier educational workflows, ensuring students and educators have the best environment to succeed.",
+        gallery: [
+          "https://picsum.photos/seed/syntax1/800/600",
+          "https://picsum.photos/seed/syntax2/800/600"
+        ],
         links: [
           { name: "Website", url: "https://www.syntax.fahimsir.com", type: "Globe" },
           { name: "Facebook", url: "https://www.facebook.com/syntax.fahimsir", type: "Facebook" },
@@ -105,11 +132,21 @@ const initialData: PortfolioData = {
       details: {
         subtitle: "Educational Platform",
         description: "TM Fahim Education is an educational platform where I serve as the IT Manager. My role involves overseeing technical operations and infrastructure to ensure a seamless learning experience for all users.",
+        gallery: [
+          "https://picsum.photos/seed/tm1/800/600",
+          "https://picsum.photos/seed/tm2/800/600"
+        ],
         links: [
           { name: "Facebook", url: "https://www.facebook.com/profile.php?id=61583322341626", type: "Facebook" }
         ]
       }
     }
+  ],
+  gallery: [
+    { url: "https://picsum.photos/seed/gal1/800/800", caption: "Event at Syntax Academy" },
+    { url: "https://picsum.photos/seed/gal2/800/800", caption: "Wrapify Workshop" },
+    { url: "https://picsum.photos/seed/gal3/800/800", caption: "IT Setup at TM Fahim" },
+    { url: "https://picsum.photos/seed/gal4/800/800", caption: "Team Meeting" }
   ],
   achievements: [
     { title: "Launched Wrapify", year: "2024", icon: "Gift", color: "text-yellow-400" },

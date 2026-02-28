@@ -12,7 +12,20 @@ export default function Admin() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (data) setEditedData(JSON.parse(JSON.stringify(data)));
+    if (data) {
+      const deepCopy = JSON.parse(JSON.stringify(data));
+      // Ensure new fields exist for existing records
+      if (!deepCopy.branding) deepCopy.branding = { logo: '', favicon: '' };
+      if (!deepCopy.contact) deepCopy.contact = { phone: '', telephone: '' };
+      if (!deepCopy.gallery) deepCopy.gallery = [];
+      
+      // Ensure venture details have gallery
+      deepCopy.ventures.forEach((v: any) => {
+        if (!v.details.gallery) v.details.gallery = [];
+      });
+
+      setEditedData(deepCopy);
+    }
   }, [data]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -114,6 +127,53 @@ export default function Admin() {
         )}
 
         <div className="space-y-12 pb-20">
+          {/* Branding & Contact */}
+          <div className="grid md:grid-cols-2 gap-8">
+            <section className="glass-card p-6 border border-white/10">
+              <h2 className="text-xl font-bold mb-6 border-b border-white/10 pb-2">Branding</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Logo URL</label>
+                  <input 
+                    value={editedData.branding.logo}
+                    onChange={(e) => setEditedData({...editedData, branding: {...editedData.branding, logo: e.target.value}})}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Favicon URL</label>
+                  <input 
+                    value={editedData.branding.favicon}
+                    onChange={(e) => setEditedData({...editedData, branding: {...editedData.branding, favicon: e.target.value}})}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="glass-card p-6 border border-white/10">
+              <h2 className="text-xl font-bold mb-6 border-b border-white/10 pb-2">Contact Info</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Phone Number</label>
+                  <input 
+                    value={editedData.contact.phone}
+                    onChange={(e) => setEditedData({...editedData, contact: {...editedData.contact, phone: e.target.value}})}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Telephone Number</label>
+                  <input 
+                    value={editedData.contact.telephone}
+                    onChange={(e) => setEditedData({...editedData, contact: {...editedData.contact, telephone: e.target.value}})}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
+                  />
+                </div>
+              </div>
+            </section>
+          </div>
+
           {/* Hero Section */}
           <section className="glass-card p-6 border border-white/10">
             <h2 className="text-xl font-bold mb-6 border-b border-white/10 pb-2">Hero Section</h2>
@@ -142,6 +202,59 @@ export default function Admin() {
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
                 />
               </div>
+            </div>
+          </section>
+
+          {/* Gallery Section */}
+          <section className="glass-card p-6 border border-white/10">
+            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-2">
+              <h2 className="text-xl font-bold">Main Gallery</h2>
+              <button 
+                onClick={() => {
+                  const newGallery = [...editedData.gallery, { url: "https://picsum.photos/800/800", caption: "New Image" }];
+                  setEditedData({...editedData, gallery: newGallery});
+                }}
+                className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {editedData.gallery.map((item: any, i: number) => (
+                <div key={i} className="p-4 bg-white/5 rounded-xl border border-white/5 relative">
+                  <button 
+                    onClick={() => {
+                      const newGallery = editedData.gallery.filter((_: any, idx: number) => idx !== i);
+                      setEditedData({...editedData, gallery: newGallery});
+                    }}
+                    className="absolute top-2 right-2 text-red-400 hover:text-red-300"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <div className="space-y-2">
+                    <input 
+                      value={item.url}
+                      onChange={(e) => {
+                        const newGallery = [...editedData.gallery];
+                        newGallery[i].url = e.target.value;
+                        setEditedData({...editedData, gallery: newGallery});
+                      }}
+                      placeholder="Image URL"
+                      className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-1 text-xs"
+                    />
+                    <input 
+                      value={item.caption}
+                      onChange={(e) => {
+                        const newGallery = [...editedData.gallery];
+                        newGallery[i].caption = e.target.value;
+                        setEditedData({...editedData, gallery: newGallery});
+                      }}
+                      placeholder="Caption"
+                      className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-1 text-xs"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -209,7 +322,7 @@ export default function Admin() {
                     img: "https://picsum.photos/seed/new/600/800",
                     tag: "Tag",
                     link: "/new",
-                    details: { subtitle: "", description: "", links: [] }
+                    details: { subtitle: "", description: "", gallery: [], links: [] }
                   }];
                   setEditedData({...editedData, ventures: newVentures});
                 }}
@@ -255,8 +368,32 @@ export default function Admin() {
                         className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2"
                       />
                     </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Main Photo URL</label>
+                      <input 
+                        value={venture.img}
+                        onChange={(e) => {
+                          const newVentures = [...editedData.ventures];
+                          newVentures[i].img = e.target.value;
+                          setEditedData({...editedData, ventures: newVentures});
+                        }}
+                        className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Page URL Slug (e.g. /wrapify)</label>
+                      <input 
+                        value={venture.link}
+                        onChange={(e) => {
+                          const newVentures = [...editedData.ventures];
+                          newVentures[i].link = e.target.value;
+                          setEditedData({...editedData, ventures: newVentures});
+                        }}
+                        className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2"
+                      />
+                    </div>
                     <div className="md:col-span-2">
-                      <label className="block text-xs text-gray-500 mb-1">Description</label>
+                      <label className="block text-xs text-gray-500 mb-1">Short Description</label>
                       <textarea 
                         value={venture.desc}
                         onChange={(e) => {
@@ -292,6 +429,22 @@ export default function Admin() {
                           rows={3}
                           className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2"
                         />
+                        
+                        {/* Subpage Gallery */}
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-2">Subpage Gallery Photos (One URL per line)</label>
+                          <textarea 
+                            value={venture.details.gallery?.join('\n') || ''}
+                            onChange={(e) => {
+                              const newVentures = [...editedData.ventures];
+                              newVentures[i].details.gallery = e.target.value.split('\n').filter(url => url.trim() !== '');
+                              setEditedData({...editedData, ventures: newVentures});
+                            }}
+                            placeholder="https://image1.jpg\nhttps://image2.jpg"
+                            rows={4}
+                            className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 font-mono text-xs"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
