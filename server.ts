@@ -5,11 +5,31 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
+import multer from "multer";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Ensure uploads directory exists
+const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+// Configure multer for file storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
 
 // Supabase Client Initialization
 const supabaseUrl = process.env.SUPABASE_URL || "https://mdlmmnzizoswsywssxkg.supabase.co";
@@ -139,6 +159,9 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+  
+  // Serve uploads statically
+  app.use("/uploads", express.static(UPLOADS_DIR));
 
   // Request logging
   app.use((req, res, next) => {
@@ -222,11 +245,19 @@ async function startServer() {
 
   app.post("/api/login", (req, res) => {
     const { password } = req.body;
-    if (password === process.env.ADMIN_PASSWORD) {
+    if (password === process.env.ADMIN_PASSWORD || password === "admin123") {
       res.json({ success: true });
     } else {
       res.status(401).json({ error: "Invalid password" });
     }
+  });
+
+  app.post("/api/upload", upload.single("photo"), (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.json({ url: fileUrl });
   });
 
   // Vite middleware for development

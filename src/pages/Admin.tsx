@@ -1,8 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { usePortfolio } from '../context/PortfolioContext';
-import { Save, LogOut, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Save, LogOut, Plus, Trash2, ArrowLeft, Upload, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const UploadButton = ({ onUpload, label = "Upload Photo" }: { onUpload: (url: string) => void, label?: string }) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        onUpload(data.url);
+      }
+    } catch (err) {
+      console.error('Upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleUpload}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+        disabled={uploading}
+      />
+      <button 
+        type="button"
+        className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors text-sm"
+      >
+        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+        {label}
+      </button>
+    </div>
+  );
+};
 
 export default function Admin() {
   const { data, refresh } = usePortfolio();
@@ -133,7 +180,10 @@ export default function Admin() {
               <h2 className="text-xl font-bold mb-6 border-b border-white/10 pb-2">Branding</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Logo URL</label>
+                  <div className="flex justify-between items-end mb-1">
+                    <label className="block text-sm text-gray-400">Logo URL</label>
+                    <UploadButton onUpload={(url) => setEditedData({...editedData, branding: {...editedData.branding, logo: url}})} />
+                  </div>
                   <input 
                     value={editedData.branding.logo}
                     onChange={(e) => setEditedData({...editedData, branding: {...editedData.branding, logo: e.target.value}})}
@@ -141,7 +191,10 @@ export default function Admin() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Favicon URL</label>
+                  <div className="flex justify-between items-end mb-1">
+                    <label className="block text-sm text-gray-400">Favicon URL</label>
+                    <UploadButton onUpload={(url) => setEditedData({...editedData, branding: {...editedData.branding, favicon: url}})} />
+                  </div>
                   <input 
                     value={editedData.branding.favicon}
                     onChange={(e) => setEditedData({...editedData, branding: {...editedData.branding, favicon: e.target.value}})}
@@ -195,7 +248,10 @@ export default function Admin() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm text-gray-400 mb-1">Image URL</label>
+                <div className="flex justify-between items-end mb-1">
+                  <label className="block text-sm text-gray-400">Image URL</label>
+                  <UploadButton onUpload={(url) => setEditedData({...editedData, hero: {...editedData.hero, image: url}})} />
+                </div>
                 <input 
                   value={editedData.hero.image}
                   onChange={(e) => setEditedData({...editedData, hero: {...editedData.hero, image: e.target.value}})}
@@ -232,6 +288,14 @@ export default function Admin() {
                     <Trash2 className="w-4 h-4" />
                   </button>
                   <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">Image</span>
+                      <UploadButton label="Upload" onUpload={(url) => {
+                        const newGallery = [...editedData.gallery];
+                        newGallery[i].url = url;
+                        setEditedData({...editedData, gallery: newGallery});
+                      }} />
+                    </div>
                     <input 
                       value={item.url}
                       onChange={(e) => {
@@ -369,7 +433,14 @@ export default function Admin() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Main Photo URL</label>
+                      <div className="flex justify-between items-end mb-1">
+                        <label className="block text-xs text-gray-500">Main Photo URL</label>
+                        <UploadButton label="Upload" onUpload={(url) => {
+                          const newVentures = [...editedData.ventures];
+                          newVentures[i].img = url;
+                          setEditedData({...editedData, ventures: newVentures});
+                        }} />
+                      </div>
                       <input 
                         value={venture.img}
                         onChange={(e) => {
@@ -432,7 +503,15 @@ export default function Admin() {
                         
                         {/* Subpage Gallery */}
                         <div>
-                          <label className="block text-xs text-gray-500 mb-2">Subpage Gallery Photos (One URL per line)</label>
+                          <div className="flex justify-between items-center mb-2">
+                            <label className="block text-xs text-gray-500">Subpage Gallery Photos (One URL per line)</label>
+                            <UploadButton label="Add Photo" onUpload={(url) => {
+                              const newVentures = [...editedData.ventures];
+                              const currentGallery = newVentures[i].details.gallery || [];
+                              newVentures[i].details.gallery = [...currentGallery, url];
+                              setEditedData({...editedData, ventures: newVentures});
+                            }} />
+                          </div>
                           <textarea 
                             value={venture.details.gallery?.join('\n') || ''}
                             onChange={(e) => {
