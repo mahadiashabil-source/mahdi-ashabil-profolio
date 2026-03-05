@@ -6,8 +6,16 @@ import dotenv from "dotenv";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
 
 dotenv.config();
+
+// Cloudinary Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dwqzky6vx",
+  api_key: process.env.CLOUDINARY_API_KEY || "993723615633523",
+  api_secret: process.env.CLOUDINARY_API_SECRET || "knslSJQD2Ejd1vmA1XNi4SRE7Qw",
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -277,12 +285,27 @@ async function startServer() {
     }
   });
 
-  app.post("/api/upload", upload.single("photo"), (req, res) => {
+  app.post("/api/upload", upload.single("photo"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    const fileUrl = `/uploads/${req.file.filename}`;
-    res.json({ url: fileUrl });
+    
+    try {
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "portfolio_uploads",
+      });
+      
+      // Delete local file after upload
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      res.json({ url: result.secure_url });
+    } catch (error: any) {
+      console.error("Cloudinary upload error:", error);
+      res.status(500).json({ error: "Failed to upload to Cloudinary", details: error.message });
+    }
   });
 
   // Vite middleware for development
