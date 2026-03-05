@@ -184,22 +184,32 @@ export default function Admin() {
                     <label className="block text-sm text-gray-400">Logo URL</label>
                     <UploadButton onUpload={(url) => setEditedData({...editedData, branding: {...editedData.branding, logo: url}})} />
                   </div>
-                  <input 
-                    value={editedData.branding.logo}
-                    onChange={(e) => setEditedData({...editedData, branding: {...editedData.branding, logo: e.target.value}})}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
-                  />
+                  <div className="flex gap-4 items-start">
+                    {editedData.branding.logo && (
+                      <img src={editedData.branding.logo} alt="Logo Preview" className="w-12 h-12 rounded border border-white/10 object-cover" referrerPolicy="no-referrer" />
+                    )}
+                    <input 
+                      value={editedData.branding.logo}
+                      onChange={(e) => setEditedData({...editedData, branding: {...editedData.branding, logo: e.target.value}})}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
+                    />
+                  </div>
                 </div>
                 <div>
                   <div className="flex justify-between items-end mb-1">
                     <label className="block text-sm text-gray-400">Favicon URL</label>
                     <UploadButton onUpload={(url) => setEditedData({...editedData, branding: {...editedData.branding, favicon: url}})} />
                   </div>
-                  <input 
-                    value={editedData.branding.favicon}
-                    onChange={(e) => setEditedData({...editedData, branding: {...editedData.branding, favicon: e.target.value}})}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
-                  />
+                  <div className="flex gap-4 items-start">
+                    {editedData.branding.favicon && (
+                      <img src={editedData.branding.favicon} alt="Favicon Preview" className="w-12 h-12 rounded border border-white/10 object-cover" referrerPolicy="no-referrer" />
+                    )}
+                    <input 
+                      value={editedData.branding.favicon}
+                      onChange={(e) => setEditedData({...editedData, branding: {...editedData.branding, favicon: e.target.value}})}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
+                    />
+                  </div>
                 </div>
               </div>
             </section>
@@ -252,11 +262,16 @@ export default function Admin() {
                   <label className="block text-sm text-gray-400">Image URL</label>
                   <UploadButton onUpload={(url) => setEditedData({...editedData, hero: {...editedData.hero, image: url}})} />
                 </div>
-                <input 
-                  value={editedData.hero.image}
-                  onChange={(e) => setEditedData({...editedData, hero: {...editedData.hero, image: e.target.value}})}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
-                />
+                <div className="flex gap-4 items-start">
+                  {editedData.hero.image && (
+                    <img src={editedData.hero.image} alt="Hero Preview" className="w-20 h-20 rounded-xl border border-white/10 object-cover" referrerPolicy="no-referrer" />
+                  )}
+                  <input 
+                    value={editedData.hero.image}
+                    onChange={(e) => setEditedData({...editedData, hero: {...editedData.hero, image: e.target.value}})}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 outline-none focus:border-cyan-400"
+                  />
+                </div>
               </div>
             </div>
           </section>
@@ -441,15 +456,20 @@ export default function Admin() {
                           setEditedData({...editedData, ventures: newVentures});
                         }} />
                       </div>
-                      <input 
-                        value={venture.img}
-                        onChange={(e) => {
-                          const newVentures = [...editedData.ventures];
-                          newVentures[i].img = e.target.value;
-                          setEditedData({...editedData, ventures: newVentures});
-                        }}
-                        className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2"
-                      />
+                      <div className="flex gap-3 items-start">
+                        {venture.img && (
+                          <img src={venture.img} alt="Venture Preview" className="w-12 h-12 rounded border border-white/10 object-cover" referrerPolicy="no-referrer" />
+                        )}
+                        <input 
+                          value={venture.img}
+                          onChange={(e) => {
+                            const newVentures = [...editedData.ventures];
+                            newVentures[i].img = e.target.value;
+                            setEditedData({...editedData, ventures: newVentures});
+                          }}
+                          className="flex-1 bg-black/30 border border-white/10 rounded-lg px-3 py-2"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Page URL Slug (e.g. /wrapify)</label>

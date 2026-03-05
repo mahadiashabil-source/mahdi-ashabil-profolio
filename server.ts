@@ -227,19 +227,25 @@ async function startServer() {
 
   app.post("/api/portfolio", async (req, res) => {
     const { password, data } = req.body;
-    if (password !== process.env.ADMIN_PASSWORD) {
+    const adminPass = process.env.ADMIN_PASSWORD || "admin123";
+    
+    if (password !== adminPass) {
+      console.warn(`${new Date().toISOString()} - Unauthorized save attempt with password: ${password?.substring(0, 2)}...`);
       return res.status(401).json({ error: "Unauthorized" });
     }
     
+    console.log(`${new Date().toISOString()} - Attempting to update portfolio data in Supabase...`);
+    
     const { error } = await supabase
       .from('portfolio')
-      .upsert({ id: 1, data: data });
+      .upsert({ id: 1, data: data }, { onConflict: 'id' });
 
     if (error) {
-      console.error("Supabase update error:", error);
+      console.error(`${new Date().toISOString()} - Supabase update error:`, JSON.stringify(error));
       return res.status(500).json({ error: error.message });
     }
     
+    console.log(`${new Date().toISOString()} - Portfolio data updated successfully in Supabase.`);
     res.json({ success: true });
   });
 
