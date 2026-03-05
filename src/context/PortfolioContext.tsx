@@ -174,7 +174,8 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
-      const res = await fetch('/api/portfolio', { 
+      // Add a timestamp to prevent browser caching
+      const res = await fetch(`/api/portfolio?t=${Date.now()}`, { 
         signal: controller.signal,
         headers: { 'Accept': 'application/json' }
       });

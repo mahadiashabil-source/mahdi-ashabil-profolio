@@ -198,8 +198,8 @@ async function startServer() {
         .maybeSingle();
 
       if (error) {
-        console.error("Supabase fetch error details:", JSON.stringify(error));
-        return res.json(initialData);
+        console.error(`${new Date().toISOString()} - Supabase fetch error details:`, JSON.stringify(error));
+        return res.status(500).json({ error: "Failed to fetch from database", details: error });
       }
 
       if (!data) {
@@ -210,9 +210,7 @@ async function startServer() {
         
         if (insertError) {
           console.error("Failed to seed Supabase table:", insertError.message);
-          console.error("Full insert error details:", JSON.stringify(insertError));
-        } else {
-          console.log("Successfully seeded initialData to Supabase.");
+          return res.status(500).json({ error: "Failed to seed database", details: insertError });
         }
         return res.json(initialData);
       }
@@ -236,16 +234,37 @@ async function startServer() {
     
     console.log(`${new Date().toISOString()} - Attempting to update portfolio data in Supabase...`);
     
-    const { error } = await supabase
+    // Add a timestamp to the data itself to track updates
+    const dataWithTimestamp = {
+      ...data,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    // Try update first
+    const { error: updateError, data: updateData, status } = await supabase
       .from('portfolio')
-      .upsert({ id: 1, data: data }, { onConflict: 'id' });
+      .update({ data: dataWithTimestamp })
+      .eq('id', 1)
+      .select();
 
-    if (error) {
-      console.error(`${new Date().toISOString()} - Supabase update error:`, JSON.stringify(error));
-      return res.status(500).json({ error: error.message });
+    if (updateError) {
+      console.error(`${new Date().toISOString()} - Supabase update error:`, JSON.stringify(updateError));
+      return res.status(500).json({ error: updateError.message });
     }
     
-    console.log(`${new Date().toISOString()} - Portfolio data updated successfully in Supabase.`);
+    if (!updateData || updateData.length === 0) {
+      console.log(`${new Date().toISOString()} - Record with id: 1 not found. Attempting to insert...`);
+      const { error: insertError } = await supabase
+        .from('portfolio')
+        .insert({ id: 1, data: dataWithTimestamp });
+      
+      if (insertError) {
+        console.error(`${new Date().toISOString()} - Supabase insert error:`, JSON.stringify(insertError));
+        return res.status(500).json({ error: insertError.message });
+      }
+    }
+    
+    console.log(`${new Date().toISOString()} - Portfolio data updated successfully.`);
     res.json({ success: true });
   });
 

@@ -57,6 +57,7 @@ export default function Admin() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [editedData, setEditedData] = useState<any>(null);
   const [message, setMessage] = useState('');
+  const [showRaw, setShowRaw] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -150,8 +151,20 @@ export default function Admin() {
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <h1 className="text-3xl font-display font-bold gradient-text">Admin Panel</h1>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+              <div className={`w-2 h-2 rounded-full ${data ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`} />
+              <span className="text-[10px] uppercase tracking-wider text-gray-400">
+                {data ? 'Connected to Database' : 'Using Local Fallback'}
+              </span>
+            </div>
           </div>
           <div className="flex gap-4">
+            <button 
+              onClick={() => setShowRaw(!showRaw)}
+              className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors text-xs text-gray-400"
+            >
+              {showRaw ? 'Hide Raw Data' : 'Show Raw Data'}
+            </button>
             <button 
               onClick={handleSave}
               className="flex items-center gap-2 px-6 py-2 bg-cyan-500 text-black font-bold rounded-xl hover:bg-cyan-400 transition-colors"
@@ -170,6 +183,15 @@ export default function Admin() {
         {message && (
           <div className={`mb-8 p-4 rounded-xl text-center ${message.includes('success') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
             {message}
+          </div>
+        )}
+
+        {showRaw && (
+          <div className="mb-8 p-6 bg-slate-900 rounded-2xl border border-cyan-500/30 font-mono text-xs overflow-auto max-h-96">
+            <h3 className="text-cyan-400 mb-4 font-bold">Raw Database Content (Current Context)</h3>
+            <pre>{JSON.stringify(data, null, 2)}</pre>
+            <h3 className="text-violet-400 mt-8 mb-4 font-bold">Unsaved Changes (Edited Data)</h3>
+            <pre>{JSON.stringify(editedData, null, 2)}</pre>
           </div>
         )}
 
