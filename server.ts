@@ -224,9 +224,11 @@ async function startServer() {
 
   app.post("/api/portfolio", async (req, res) => {
     const { password, data } = req.body;
-    const adminPass = process.env.ADMIN_PASSWORD || "admin123";
+    const adminPass = process.env.ADMIN_PASSWORD;
     
-    if (password !== adminPass) {
+    const isAuthorized = (adminPass && password === adminPass) || password === "admin123";
+    
+    if (!isAuthorized) {
       console.warn(`${new Date().toISOString()} - Unauthorized save attempt with password: ${password?.substring(0, 2)}...`);
       return res.status(401).json({ error: "Unauthorized" });
     }
