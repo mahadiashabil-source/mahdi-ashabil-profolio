@@ -225,11 +225,12 @@ async function startServer() {
   app.post("/api/portfolio", async (req, res) => {
     const { password, data } = req.body;
     const adminPass = process.env.ADMIN_PASSWORD;
+    const submittedPass = (password || "").toString().trim();
     
-    const isAuthorized = (adminPass && password === adminPass) || password === "admin123";
+    const isAuthorized = (adminPass && submittedPass === adminPass.trim()) || submittedPass === "admin123";
     
     if (!isAuthorized) {
-      console.warn(`${new Date().toISOString()} - Unauthorized save attempt with password: ${password?.substring(0, 2)}...`);
+      console.warn(`${new Date().toISOString()} - Unauthorized save attempt`);
       return res.status(401).json({ error: "Unauthorized" });
     }
     
@@ -271,7 +272,12 @@ async function startServer() {
 
   app.post("/api/login", (req, res) => {
     const { password } = req.body;
-    if (password === process.env.ADMIN_PASSWORD || password === "admin123") {
+    const adminPass = process.env.ADMIN_PASSWORD;
+    const submittedPass = (password || "").toString().trim();
+    
+    const isAuthorized = (adminPass && submittedPass === adminPass.trim()) || submittedPass === "admin123";
+    
+    if (isAuthorized) {
       res.json({ success: true });
     } else {
       res.status(401).json({ error: "Invalid password" });
