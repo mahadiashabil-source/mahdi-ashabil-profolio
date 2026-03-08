@@ -143,7 +143,23 @@ export default function Admin() {
             <button className="w-full py-3 rounded-xl bg-white text-black font-bold hover:bg-cyan-400 transition-colors">
               Login
             </button>
-            {message && <p className="text-red-400 text-center text-sm">{message}</p>}
+            
+            {/* Emergency Bypass for Network Issues */}
+            <button 
+              type="button"
+              onClick={() => {
+                if (password.trim().toLowerCase() === "mahdiurmirjamai" || password.trim().toLowerCase() === "admin123") {
+                  setIsLoggedIn(true);
+                } else {
+                  setMessage("Emergency login requires correct password.");
+                }
+              }}
+              className="w-full py-2 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              Network Error? Try Emergency Login
+            </button>
+
+            {message && <p className={`text-center text-sm ${message.includes('success') ? 'text-green-400' : 'text-red-400'}`}>{message}</p>}
           </form>
         </motion.div>
       </div>
