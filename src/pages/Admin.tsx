@@ -78,20 +78,30 @@ export default function Admin() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!password.trim()) {
+      setMessage('Please enter a password');
+      return;
+    }
+    
+    setMessage('Logging in...');
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ password: password.trim() })
       });
+      
+      const result = await res.json();
+      
       if (res.ok) {
         setIsLoggedIn(true);
         setMessage('');
       } else {
-        setMessage('Invalid password');
+        setMessage(result.error || 'Invalid password');
       }
     } catch (err) {
-      setMessage('Login failed');
+      console.error('Login error:', err);
+      setMessage('Network error. Is the server running?');
     }
   };
 

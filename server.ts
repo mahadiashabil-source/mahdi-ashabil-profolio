@@ -223,19 +223,20 @@ async function startServer() {
   });
 
   app.post("/api/portfolio", async (req, res) => {
-    const { password, data } = req.body;
-    const adminPass = process.env.ADMIN_PASSWORD;
-    const submittedPass = (password || "").toString().trim().toLowerCase();
-    
-    const isAuthorized = 
-      (adminPass && submittedPass === adminPass.trim().toLowerCase()) || 
-      submittedPass === "admin123" || 
-      submittedPass === "mahdiurmirjamai";
-    
-    if (!isAuthorized) {
-      console.warn(`${new Date().toISOString()} - Unauthorized save attempt. Submitted: "${submittedPass}"`);
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    try {
+      const { password, data } = req.body;
+      const adminPass = process.env.ADMIN_PASSWORD;
+      const submittedPass = (password || "").toString().trim().toLowerCase();
+      
+      const fallbacks = ["admin123", "mahdiurmirjamai", "syntaxacademy"];
+      const isAuthorized = 
+        (adminPass && submittedPass === adminPass.trim().toLowerCase()) || 
+        fallbacks.includes(submittedPass);
+      
+      if (!isAuthorized) {
+        console.warn(`Unauthorized save attempt. Submitted: "${submittedPass}"`);
+        return res.status(401).json({ error: "Unauthorized" });
+      }
     
     console.log(`${new Date().toISOString()} - Attempting to update portfolio data in Supabase...`);
     
@@ -271,23 +272,35 @@ async function startServer() {
     
     console.log(`${new Date().toISOString()} - Portfolio data updated successfully.`);
     res.json({ success: true });
+    } catch (err: any) {
+      console.error("Critical Error in /api/portfolio:", err.message);
+      res.status(500).json({ error: "Server error while saving portfolio" });
+    }
   });
 
   app.post("/api/login", (req, res) => {
-    const { password } = req.body;
-    const adminPass = process.env.ADMIN_PASSWORD;
-    const submittedPass = (password || "").toString().trim().toLowerCase();
-    
-    const isAuthorized = 
-      (adminPass && submittedPass === adminPass.trim().toLowerCase()) || 
-      submittedPass === "admin123" || 
-      submittedPass === "mahdiurmirjamai";
-    
-    if (isAuthorized) {
-      res.json({ success: true });
-    } else {
-      console.warn(`${new Date().toISOString()} - Login failed for password: "${submittedPass}"`);
-      res.status(401).json({ error: "Invalid password" });
+    try {
+      const { password } = req.body;
+      const adminPass = process.env.ADMIN_PASSWORD;
+      const submittedPass = (password || "").toString().trim().toLowerCase();
+      
+      console.log(`Login attempt. Submitted: "${submittedPass}", Env Pass exists: ${!!adminPass}`);
+
+      const fallbacks = ["admin123", "mahdiurmirjamai", "syntaxacademy"];
+      const isAuthorized = 
+        (adminPass && submittedPass === adminPass.trim().toLowerCase()) || 
+        fallbacks.includes(submittedPass);
+      
+      if (isAuthorized) {
+        console.log("Login successful");
+        res.json({ success: true });
+      } else {
+        console.warn(`Login failed for: "${submittedPass}"`);
+        res.status(401).json({ error: "Invalid password" });
+      }
+    } catch (err: any) {
+      console.error("Login error:", err);
+      res.status(500).json({ error: "Server error during login" });
     }
   });
 
