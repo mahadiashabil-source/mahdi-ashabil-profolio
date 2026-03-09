@@ -7,6 +7,7 @@ import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
+import cors from "cors";
 
 dotenv.config();
 
@@ -157,9 +158,19 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(cors());
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
   
-  // 1. API ROUTES FIRST (Before any middleware or static serving)
+  // 1. API ROUTES FIRST
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", time: new Date().toISOString() });
+  });
+
+  app.get("/api/test", (req, res) => {
+    res.json({ message: "API is reachable", time: new Date().toISOString() });
+  });
+
   app.post("/api/login", (req, res) => {
     try {
       const { password } = req.body;
@@ -182,10 +193,6 @@ async function startServer() {
       console.error("Login error:", err);
       return res.status(500).json({ error: "Server error during login" });
     }
-  });
-
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", time: new Date().toISOString() });
   });
 
   // Serve uploads statically
@@ -285,32 +292,6 @@ async function startServer() {
     } catch (err: any) {
       console.error("Critical Error in /api/portfolio:", err.message);
       res.status(500).json({ error: "Server error while saving portfolio" });
-    }
-  });
-
-  app.post("/api/login", (req, res) => {
-    try {
-      const { password } = req.body;
-      const adminPass = process.env.ADMIN_PASSWORD;
-      const submittedPass = (password || "").toString().trim().toLowerCase();
-      
-      console.log(`Login attempt. Submitted: "${submittedPass}", Env Pass exists: ${!!adminPass}`);
-
-      const fallbacks = ["admin123", "mahdiurmirjamai", "syntaxacademy"];
-      const isAuthorized = 
-        (adminPass && submittedPass === adminPass.trim().toLowerCase()) || 
-        fallbacks.includes(submittedPass);
-      
-      if (isAuthorized) {
-        console.log("Login successful");
-        res.json({ success: true });
-      } else {
-        console.warn(`Login failed for: "${submittedPass}"`);
-        res.status(401).json({ error: "Invalid password" });
-      }
-    } catch (err: any) {
-      console.error("Login error:", err);
-      res.status(500).json({ error: "Server error during login" });
     }
   });
 
